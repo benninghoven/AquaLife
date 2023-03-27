@@ -2,37 +2,28 @@ import pygame as pg
 
 from object import Object
 from food import Food
-
-MAX_ENTITIES = 64
-WATER_LINE = 50
-
-"""
-Rectangles 
-Circles 
-Ellipses 
-Lines
-Polygons
-"""
+from fish import Fish
+from constants import C
 
 class Game:
     def __init__(self):
         pg.init()
-        self.screenWidth = 800
-        self.screenHeight = 600
-        self.screen = pg.display.set_mode((self.screenWidth, self.screenHeight))
-        self.background = pg.Surface((self.screenWidth,self.screenHeight))
-        self.water = pg.Surface((self.screenWidth,self.screenHeight), pg.SRCALPHA)
-        self.uiScreen = pg.Surface((self.screenWidth,self.screenHeight))
+        self.FONT = pg.font.Font(None, 50)
+        self.screen = pg.display.set_mode((C.WIDTH, C.HEIGHT))
+        pg.display.set_caption("AquaLife")
+        self.background = pg.Surface((C.WIDTH, C.HEIGHT))
+        self.background.fill(C.COLORS["WHITE"])
+        self.water= pg.Surface((C.WIDTH, C.HEIGHT)).convert_alpha()
+        self.water.fill(C.COLORS["AQUA"])
         self.clock = pg.time.Clock()
-        self.font = pg.font.Font(None, 40) #WHAT
-        self.ticks= 0
-        self.eventHandlersDict= {
+        self.eventHandlerDict= {
             pg.QUIT: self.QuitGameEvent,
             pg.KEYDOWN: self.KeyDownEvent,
             pg.MOUSEBUTTONDOWN: self.MouseButtonDownEvent,
             # add more event types and associated functions as needed
         }
-        self.objects= []
+        self.food_list = []
+        self.fish = Fish((C.WIDTH/2,C.HEIGHT/2))
 
     def QuitGameEvent(self, event = None):
         print("quitting game")
@@ -42,61 +33,57 @@ class Game:
     def KeyDownEvent(self, event):
         key = pg.key.name(event.key)
         print(key)
-        # MOVEMENT TODO
-        pass
         if key == 'q':
             self.QuitGameEvent()
-        elif key == 'escape':
-            print("MENU") #TODO
 
     def MouseButtonDownEvent(self, event):
         button = event.button
         pos = event.pos
         print(f"button pressed: {button}\t pos: {pos}")
         if button == 1:
-            self.objects.append(Food(pos))
-            pass
+            self.SpawnFood(pos)
+
+    def SpawnFood(self, pos):
+            self.food_list.append(Food(pos))
+
 
     def EventHandler(self):
         for event in pg.event.get():
-            if event.type in self.eventHandlersDict:
-                self.eventHandlersDict[event.type](event)
+            if event.type in self.eventHandlerDict:
+                self.eventHandlerDict[event.type](event)
 
-    def Update(self):
-        self.ticks += 1
-        for object in self.objects:
-            object.y += object.yVel
-            object.yVel += .01
+    def Process(self):
+        self.textSurface = self.FONT.render(f"Food: {len(self.food_list)}", False,C.COLORS["BLACK"])
 
-    def DrawFrame(self):
-        pg.display.get_surface().blit(self.background,(0,0))  # Draw surface2
-        for object in self.objects:
-            pg.draw.circle(self.screen, object.color, (object.x, object.y), 10)
+        for object in self.food_list:
+            object.Update()
 
-        pg.display.get_surface().blit(self.water,(0,WATER_LINE))  # Draw surface2
+        self.fish.Update()
+
+    def Draw(self):
+        # BACKGROUND
+        self.screen.blit(self.background,(0,0))
+        # OBJECTS
+        for object in self.food_list:
+            pg.draw.rect(self.screen,object.color, object.rect)
+
+        # PLAYER
+        pg.draw.rect(self.screen,self.fish.color, self.fish.rect)
+        # FOREGROUND
+        self.screen.blit(self.water,(0,C.WATER_LINE))
+        # UI
+        self.screen.blit(self.textSurface,(C.WIDTH/2 - self.textSurface.get_width()/2,0))
+
         pg.display.update()
 
-    def DrawBackground(self):
-        self.water.fill((0, 191, 255,128))
-        self.background.fill((255, 255, 255))
+    def FrameCeiling(self):
+            self.clock.tick(C.FPS)
 
 
     def Run(self):
-        self.DrawBackground()
         while True:
-            self.clock.tick(60)
-            self.EventHandler()
-            self.Update()
-            self.DrawFrame()
-
-
-
-
-
-
-
-
-
-
-
-
+            #ticks = pg.time.get_ticks()
+            self.EventHandler() #Event Looop
+            self.Process()
+            self.Draw() #Place shit on screen
+            self.FrameCeiling()
