@@ -12,8 +12,12 @@ class Object:
         self.xVel = 0
         self.yVel = 0
         self.gravity = .05
+        self.width = 10
+        self.height = 10
+        self.rect = pg.Rect(self.x, self.y, self.width, self.height)
 
     def Update(self):
+        self.x += self.xVel
         self.y += self.yVel
         self.yVel += self.gravity
         if self.y >= C.FLOOR:

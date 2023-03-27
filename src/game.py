@@ -1,9 +1,22 @@
 import pygame as pg
+import math
 
 from object import Object
 from food import Food
 from fish import Fish
 from constants import C
+
+def FindClosestFood(foodList, fish):
+    closestFood = None
+    closestDistance = float("inf")
+    for food in foodList:
+        if food.is_wet == False:
+            continue
+        distance = math.sqrt((fish.x - food.x)**2 + (fish.y - food.y)**2)
+        if distance < closestDistance:
+            closestDistance = distance
+            closestFood = food
+    return closestFood
 
 class Game:
     def __init__(self):
@@ -44,7 +57,9 @@ class Game:
             self.SpawnFood(pos)
 
     def SpawnFood(self, pos):
-            self.food_list.append(Food(pos))
+            for i in range(1):
+                self.food_list.append(Food(pos))
+
 
 
     def EventHandler(self):
@@ -54,11 +69,21 @@ class Game:
 
     def Process(self):
         self.textSurface = self.FONT.render(f"Food: {len(self.food_list)}", False,C.COLORS["BLACK"])
+        closestFood = None
+        if self.fish.hungry:
+            closestFood = FindClosestFood(self.food_list,self.fish)
+        if closestFood:
+            print("MOVING")
+            self.fish.Move((closestFood.x,closestFood.y))
+            if self.fish.rect.colliderect(closestFood.rect):
+                self.food_list.remove(closestFood)
+                self.fish.Grow()
 
         for object in self.food_list:
             object.Update()
 
         self.fish.Update()
+
 
     def Draw(self):
         # BACKGROUND
